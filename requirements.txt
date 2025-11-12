@@ -1,0 +1,12 @@
+streamlit
+gtts
+requests
+beautifulsoup4
+moviepy
+transformers
+torch
+fastapi==0.110.0
+numpy==2.2.0
+pillow==11.0.0
+tokenizers==0.21.0
+huggingface-hub==0.24.0
