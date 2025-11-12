@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIB Text-to-Video Generator</title>
+    <!-- 1. Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. Load Lucide Icons for UI -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 3. Configure Tailwind to use 'Inter' font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'fade-in-down': 'fadeInDown 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: 0 },
+                            '100%': { opacity: 1 },
+                        },
+                        fadeInDown: {
+                            '0%': { opacity: 0, transform: 'translateY(-20px)' },
+                            '100%': { opacity: 1, transform: 'translateY(0)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        /* A simple scrollbar for the textarea */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background-color: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background-color: #1f2937; /* gray-800 */
+        }
+        /* Loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3; /* light grey */
+            border-top: 4px solid #3498db; /* blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Style the file input button */
+        input[type="file"]::file-selector-button {
+            font-weight: 600;
+            color: #3b82f6; /* blue-500 */
+            background-color: #374151; /* gray-700 */
+            border: none;
+            border-right: 1px solid #4b5563; /* gray-600 */
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #4b5563; /* gray-600 */
+        }
+        /* Hide all page sections by default */
+        .page-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        /* Style for the active nav link */
+        .nav-link.active {
+            background-color: #3b82f6; /* blue-600 */
+            color: #ffffff;
+        }
+        /* Style for inactive nav links */
+        .nav-link {
+            color: #d1d5db; /* gray-300 */
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .nav-link:hover {
+            background-color: #374151; /* gray-700 */
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-900 text-white font-sans antialiased">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-gray-800 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo/Title -->
+                <div class="flex-shrink-0 flex items-center">
+                    <i data-lucide="play-circle" class="h-8 w-8 text-blue-400 mr-2"></i>
+                    <span class="font-bold text-xl text-white">PressPlay AI</span>
+                </div>
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-4">
+                    <a href="#" id="nav-home" class="nav-link px-3 py-2 rounded-md text-sm font-medium" onclick="showPage('home')">
+                        <span class="sm:hidden"><i data-lucide="home" class="h-5 w-5"></i></span>
+                        <span class="hidden sm:inline">Home</span>
+                    </a>
+                    <a href="#" id="nav-create" class="nav-link px-3 py-2 rounded-md text-sm font-medium" onclick="showPage('create')">
+                        <span class="sm:hidden"><i data-lucide="video" class="h-5 w-5"></i></span>
+                        <span class="hidden sm:inline">Create Video</span>
+                    </a>
+                    <a href="#" id="nav-how" class="nav-link px-3 py-2 rounded-md text-sm font-medium" onclick="showPage('how')">
+                        <span class="sm:hidden"><i data-lucide="help-circle" class="h-5 w-5"></i></span>
+                        <span class="hidden sm:inline">How It Works</span>
+                    </a>
+                    <a href="#" id="nav-about" class="nav-link px-3 py-2 rounded-md text-sm font-medium" onclick="showPage('about')">
+                        <span class="sm:hidden"><i data-lucide="info" class="h-5 w-5"></i></span>
+                        <span class="hidden sm:inline">About</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container mx-auto max-w-7xl p-4 md:p-8">
+
+        <!-- Page 1: Home -->
+        <div id="page-home" class="page-section">
+            <!-- Hero Section -->
+            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 p-12 md:p-20 text-center shadow-xl animate-fade-in-down">
+                <div class="absolute inset-0 bg-black opacity-20"></div>
+                <div class="relative z-10">
+                    <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-4">
+                        Bring Information to Life
+                    </h1>
+                    <p class="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
+                        Automatically convert static PIB press releases into dynamic, multilingual videos in seconds.
+                    </p>
+                    <button class="bg-white text-blue-600 font-bold py-3 px-8 rounded-full text-lg shadow-lg transform hover:scale-105 transition-transform duration-300" onclick="showPage('create')">
+                        Start Creating Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="mt-16">
+                <h2 class="text-3xl font-bold text-center mb-10 text-gray-100">Project Features</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center animate-fade-in" style="animation-delay: 0.2s;">
+                        <i data-lucide="languages" class="h-12 w-12 text-blue-400 mx-auto mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Multilingual Voices</h3>
+                        <p class="text-gray-400">
+                            Select from dozens of voices across 13+ languages, including Hindi, Tamil, Bengali, and more, using your browser's built-in TTS.
+                        </p>
+                    </div>
+                    <!-- Feature 2 -->
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center animate-fade-in" style="animation-delay: 0.4s;">
+                        <i data-lucide="image" class="h-12 w-12 text-blue-400 mx-auto mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Custom Backgrounds</h3>
+                        <p class="text-gray-400">
+                            Upload your own background images. The prototype will automatically cycle through them with smooth crossfade transitions.
+                        </p>
+                    </div>
+                    <!-- Feature 3 -->
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-lg text-center animate-fade-in" style="animation-delay: 0.6s;">
+                        <i data-lucide="video" class="h-12 w-12 text-blue-400 mx-auto mb-4"></i>
+                        <h3 class="text-2xl font-semibold mb-2">Instant Video Simulation</h3>
+                        <p class="text-gray-400">
+                            Watch your video simulation instantly in the browser, complete with audio, dynamic images, and synchronized subtitles.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: Create Video (Your Main App) -->
+        <div id="page-create" class="page-section">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Left Side: Configuration Panel -->
+                <div class="w-full lg:w-1/2 flex-shrink-0">
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl">
+                        <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                            <i data-lucide="settings-2" class="h-6 w-6 mr-2 text-blue-400"></i>
+                            1. Configuration
+                        </h2>
+
+                        <!-- Language Selection -->
+                        <div class="mb-6">
+                            <label for="voiceSelect" class="block text-sm font-medium text-gray-300 mb-2">Select Language & Voice</label>
+                            <select id="voiceSelect" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Loading voices...</option>
+                            </select>
+                            <p id="voice-warning" class="text-xs text-yellow-500 mt-2 hidden">
+                                Note: Voices are provided by your browser. Language availability may vary.
+                            </p>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="mb-6">
+                            <label for="imageUpload" class="block text-sm font-medium text-gray-300 mb-2">Select Background Images</label>
+                            <input type="file" id="imageUpload" multiple accept="image/*" class="w-full text-sm text-gray-400 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer focus:outline-none">
+                            <p id="imageStatus" class="text-xs text-green-500 mt-2 hidden"></p>
+                        </div>
+
+                        <!-- Text Input -->
+                        <div class="mb-4">
+                            <label for="textInput" class="block text-sm font-medium text-gray-300 mb-2">Paste Press Release Text</label>
+                            <textarea id="textInput" rows="10" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none">
+The Union Cabinet, chaired by the Prime Minister, has approved the 'Pradhan Mantri Berozgari Bhatta Yojana' (PM-BBY), a landmark scheme to provide financial support to unemployed youth. This initiative aims to empower millions by offering them a monthly stipend and access to skill development programs.
+
+The scheme will be rolled out in phases, starting with metropolitan cities. "This is a historic step towards ensuring the financial security of our nation's youth," said the Minister. The government has allocated a significant budget for this purpose.
+
+Online registration portals will be launched next month. The program will integrate with existing skill development platforms to enhance employability. This holistic approach ensures that beneficiaries are not just supported financially but are also prepared for the job market.
+                            </textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button id="generateBtn" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2">
+                                <i data-lucide="play" class="h-5 w-5"></i>
+                                <span>Generate Video</span>
+                            </button>
+                            <button id="stopBtn" class="w-full bg-gray-600 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 flex items-center justify-center space-x-2" disabled>
+                                <i data-lucide="stop-circle" class="h-5 w-5"></i>
+                                <span>Stop</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Video Player Simulation -->
+                <div class="w-full lg:w-1/2">
+                    <div class="bg-gray-800 p-6 rounded-2xl shadow-xl sticky top-24">
+                        <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                            <i data-lucide="film" class="h-6 w-6 mr-2 text-blue-400"></i>
+                            2. Simulated Video Player
+                        </h2>
+                        
+                        <div id="videoPlayer" class="w-full aspect-video bg-black rounded-lg shadow-inner overflow-hidden relative">
+                            <!-- Placeholder -->
+                            <div id="player-placeholder" class="absolute inset-0 flex flex-col items-center justify-center p-4 z-10 transition-opacity duration-300">
+                                <svg class="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <p class="text-gray-500 mt-2 text-center">Your generated video will play here.</p>
+                            </div>
+
+                            <!-- Loading Spinner -->
+                            <div id="player-loading" class="absolute inset-0 flex-col items-center justify-center bg-black bg-opacity-80 z-20 flex opacity-0 hidden transition-opacity duration-300">
+                                <div class="loader"></div>
+                                <p class="text-gray-300 mt-3">Generating video, please wait...</p>
+                            </div>
+                            
+                            <!-- Image Display -->
+                            <img id="videoImage1" src="" alt="Scene visual" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0 z-0">
+                            <img id="videoImage2" src="" alt="Scene visual" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 opacity-0 z-0">
+                            
+                            <!-- Subtitles -->
+                            <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+                                <p id="videoSubtitle" class="text-base md:text-xl font-semibold text-white text-center shadow-lg" style="text-shadow: 0 0 8px rgba(0,0,0,0.8);"></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Status & Download Area -->
+                        <div id="statusMessage" class="text-center text-gray-400 mt-4 text-sm h-5"></div>
+
+                        <div id="download-container" class="mt-4 hidden animate-fade-in">
+                            <button id="downloadBtn" class="w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md flex items-center justify-center space-x-2 opacity-50 cursor-not-allowed">
+                                <i data-lucide="download" class="h-5 w-5"></i>
+                                <span>Download Video (Prototype)</span>
+                            </button>
+                            <p class="text-xs text-gray-500 text-center mt-2">
+                                Note: This is a browser prototype.
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: How It Works -->
+        <div id="page-how" class="page-section">
+            <div class="bg-gray-800 p-8 md:p-12 rounded-2xl shadow-xl max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6 text-white flex items-center"><i data-lucide="help-circle" class="h-8 w-8 mr-3 text-blue-400"></i>How It Works</h2>
+                <div class="space-y-6 text-gray-300 leading-relaxed">
+                    <p>This prototype demonstrates the core functionality of the full server-side "PressPlay" project. Here’s how to use this simulation:</p>
+                    
+                    <ol class="list-decimal list-outside space-y-4 pl-8 marker:text-blue-400 marker:font-bold">
+                        <li>
+                            <strong class="font-semibold text-white">Select Language:</strong> Go to the "Create Video" page. Use the first dropdown to select a voice. This prototype uses your browser's built-in voices, so the available languages (Hindi, Tamil, etc.) depend on your system (Windows/macOS/Android).
+                        </li>
+                        <li>
+                            <strong class="font-semibold text-white">Upload Images:</strong> Click the "Select Background Images" button and choose one or more images from your computer. These will be used as the backgrounds for your video.
+                        </li>
+                        <li>
+                            <strong class="font-semibold text-white">Paste Your Text:</strong> Paste any text into the text area. The system will automatically split it into sentences to create "scenes".
+                        </li>
+                        <li>
+                            <strong class="font-semibold text-white">Generate:</strong> Click "Generate Video". The app will begin speaking the text in the selected language, while displaying your images with smooth crossfade transitions and synchronized subtitles.
+                        </li>
+                    </ol>
+
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 4: About -->
+        <div id="page-about" class="page-section">
+            <div class="bg-gray-800 p-8 md:p-12 rounded-2xl shadow-xl max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6 text-white flex items-center"><i data-lucide="info" class="h-8 w-8 mr-3 text-blue-400"></i>About This Project</h2>
+                <div class="space-y-6 text-gray-300 leading-relaxed">
+                    <p>
+                        This project, "PressPlay AI," is a proof-of-concept designed to tackle a major challenge in public communication: **information accessibility**.
+                    </p>
+                    <p>
+                        Government bodies like the Press Information Bureau (PIB) release critical information as text-heavy articles. This format creates a barrier for citizens who speak one of India's 13+ regional languages, as well as for those who prefer more engaging video content.
+                    </p>
+                    <p>
+                        The full-scale version of this project (designed in Python) uses a sophisticated AI pipeline to solve this:
+                    </p>
+                    <ul class="list-disc list-outside pl-8 space-y-2 marker:text-blue-400">
+                        <li><strong class="text-white">Web Scraping</strong> to fetch press releases.</li>
+                        <li><strong class="text-white">AI Summarization</strong> (Hugging Face Transformers) to create a concise script.</li>
+                        <li><strong class="text-white">Multilingual TTS</strong> (gTTS) to generate audio in 13+ languages.</li>
+                        <li><strong class="text-white">AI Image Generation</strong> (Stable Diffusion) to create relevant visuals.</li>
+                        <li><strong class="text-white">Video Assembly</strong> (MoviePy) to combine all assets into a final MP4 video.</li>
+                    </ul>
+                    <p>
+                        This HTML/JS prototype simulates the front-end user experience of that powerful server-side application.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-16 shadow-inner py-6">
+        <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center text-gray-500">
+            <p>&copy; 2025 PressPlay AI.</p>
+        </div>
+    </footer>
+
+
+    <script>
+        // === DOM Elements ===
+        const voiceSelect = document.getElementById('voiceSelect');
+        const textInput = document.getElementById('textInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const playerPlaceholder = document.getElementById('player-placeholder');
+        const playerLoading = document.getElementById('player-loading');
+        
+        const imageElements = [
+            document.getElementById('videoImage1'),
+            document.getElementById('videoImage2')
+        ];
+        
+        const videoSubtitle = document.getElementById('videoSubtitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const voiceWarning = document.getElementById('voice-warning');
+        
+        const imageUpload = document.getElementById('imageUpload');
+        const imageStatus = document.getElementById('imageStatus');
+        
+        const downloadContainer = document.getElementById('download-container');
+
+        // === Page Navigation Elements ===
+        const pageSections = document.querySelectorAll('.page-section');
+        const navLinks = {
+            'home': document.getElementById('nav-home'),
+            'create': document.getElementById('nav-create'),
+            'how': document.getElementById('nav-how'),
+            'about': document.getElementById('nav-about'),
+        };
+
+        // === State ===
+        let synth = window.speechSynthesis;
+        let voices = [];
+        let currentUtterance = null;
+        let sentences = [];
+        let currentSentenceIndex = 0;
+        let isStopped = false;
+        let currentImageToggle = 0; 
+        let userImageURLs = [];
+
+        // === Core Functions ===
+
+        /**
+         * 1. Page Navigation
+         * Hides all pages and shows the one with 'pageId'.
+         */
+        function showPage(pageId) {
+            // Hide all page sections
+            pageSections.forEach(page => {
+                page.style.display = 'none';
+            });
+            
+            // Show the target page
+            const targetPage = document.getElementById(`page-${pageId}`);
+            if (targetPage) {
+                targetPage.style.display = 'block';
+            }
+
+            // Update active nav link
+            Object.values(navLinks).forEach(link => {
+                link.classList.remove('active');
+            });
+            if (navLinks[pageId]) {
+                navLinks[pageId].classList.add('active');
+            }
+            
+            // Stop any speech if we navigate away from the create page
+            if (pageId !== 'create') {
+                stopPlayback();
+            }
+        }
+
+        /**
+         * 2. Populate Voice List
+         */
+        function populateVoiceList() {
+            synth.onvoiceschanged = () => {
+                voices = synth.getVoices();
+                voiceSelect.innerHTML = '<option value="">Select a Language</option>'; 
+
+                const priorityLangs = ['hi-IN', 'bn-IN', 'ta-IN', 'te-IN', 'kn-IN', 'gu-IN', 'mr-IN', 'ml-IN', 'pa-IN', 'ur-IN', 'en-IN'];
+                
+                priorityLangs.forEach(lang => {
+                    voices.filter(voice => voice.lang === lang)
+                          .forEach(voice => {
+                        const option = document.createElement('option');
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        option.setAttribute('data-lang', voice.lang);
+                        option.setAttribute('data-name', voice.name);
+                        voiceSelect.appendChild(option);
+                    });
+                });
+
+                voices.forEach(voice => {
+                    if (!priorityLangs.includes(voice.lang)) {
+                        const option = document.createElement('option');
+                        option.textContent = `${voice.name} (${voice.lang})`;
+                        option.setAttribute('data-lang', voice.lang);
+                        option.setAttribute('data-name', voice.name);
+                        voiceSelect.appendChild(option);
+                    }
+                });
+
+                if (voices.length > 0) {
+                    voiceWarning.classList.remove('hidden');
+                } else {
+                    voiceSelect.innerHTML = '<option value="">No voices found in this browser</option>';
+                }
+            };
+            if (synth.getVoices().length > 0) {
+                synth.onvoiceschanged();
+            }
+        }
+
+        /**
+         * 3. Handle Image Upload
+         */
+        function handleImageUpload(event) {
+            userImageURLs = []; 
+            const files = event.target.files;
+            
+            if (files.length === 0) {
+                imageStatus.textContent = 'No images selected.';
+                imageStatus.classList.add('hidden');
+                return;
+            }
+
+            let loadedCount = 0;
+            imageStatus.textContent = `Loading ${files.length} images...`;
+            imageStatus.classList.remove('hidden', 'text-green-500', 'text-yellow-500');
+
+            for (const file of files) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    userImageURLs.push(e.target.result);
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        imageStatus.textContent = `${files.length} images loaded successfully!`;
+                        imageStatus.classList.remove('text-yellow-500');
+                        imageStatus.classList.add('text-green-500');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+
+        /**
+         * 4. Text-to-Sentence Parser
+         */
+        function parseTextToSentences(text) {
+            return text
+                .replace(/(\.+|!|\?)(\s|(?=[\r\n]{2,}))/g, "$1|")
+                .replace(/(\r\n|\n){2,}/g, "|")
+                .split('|')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+        }
+
+        /**
+         * 5. The "Video Player" Engine
+         */
+        async function playScene(index) {
+            if (index >= sentences.length || isStopped) {
+                stopPlayback();
+                statusMessage.textContent = 'Video playback finished.';
+                downloadContainer.classList.remove('hidden'); // Show download button
+                return;
+            }
+
+            currentSentenceIndex = index;
+            const sentence = sentences[index];
+            statusMessage.textContent = `Playing scene ${index + 1} of ${sentences.length}...`;
+            const imageUrl = userImageURLs[index % userImageURLs.length];
+
+            const activeImage = imageElements[currentImageToggle];
+            const inactiveImage = imageElements[1 - currentImageToggle];
+            
+            inactiveImage.src = imageUrl;
+            inactiveImage.style.opacity = '1';
+            activeImage.style.opacity = '0';
+            currentImageToggle = 1 - currentImageToggle;
+
+            videoSubtitle.textContent = sentence;
+
+            const selectedVoiceName = voiceSelect.options[voiceSelect.selectedIndex].getAttribute('data-name');
+            const voice = voices.find(v => v.name === selectedVoiceName);
+
+            currentUtterance = new SpeechSynthesisUtterance(sentence);
+            if (voice) {
+                currentUtterance.voice = voice;
+                currentUtterance.lang = voice.lang;
+            }
+            currentUtterance.rate = 0.9;
+            currentUtterance.pitch = 1;
+
+            currentUtterance.onend = () => {
+                playScene(index + 1);
+            };
+
+            currentUtterance.onerror = (e) => {
+                console.error('Speech synthesis error:', e);
+                statusMessage.textContent = `Error: ${e.error}. Skipping to next scene.`;
+                playScene(index + 1);
+            };
+
+            synth.speak(currentUtterance);
+        }
+
+        /**
+         * 6. Start Playback
+         */
+        function startPlayback() {
+            if (synth.speaking) {
+                statusMessage.textContent = 'Speech is already in progress.';
+                return;
+            }
+            
+            if (userImageURLs.length === 0) {
+                statusMessage.textContent = 'Error: Please select at least one background image.';
+                imageStatus.textContent = 'Please select images using the button above.';
+                imageStatus.classList.remove('hidden', 'text-green-500');
+                imageStatus.classList.add('text-yellow-500');
+                return;
+            }
+
+            const text = textInput.value;
+            if (!text.trim()) {
+                statusMessage.textContent = 'Error: Text input is empty.';
+                return;
+            }
+            
+            const selectedVoiceName = voiceSelect.options[voiceSelect.selectedIndex].getAttribute('data-name');
+            if (!selectedVoiceName) {
+                statusMessage.textContent = 'Error: Please select a voice.';
+                return;
+            }
+
+            isStopped = false;
+            sentences = parseTextToSentences(text);
+            if (sentences.length === 0) {
+                statusMessage.textContent = 'Error: Could not parse any sentences.';
+                return;
+            }
+
+            // Update UI
+            playerPlaceholder.style.opacity = '0';
+            playerPlaceholder.classList.add('hidden');
+            playerLoading.classList.remove('hidden');
+            playerLoading.style.opacity = '1';
+            generateBtn.disabled = true;
+            stopBtn.disabled = false;
+            textInput.disabled = true;
+            voiceSelect.disabled = true;
+            imageUpload.disabled = true;
+            statusMessage.textContent = 'Initializing video...';
+            downloadContainer.classList.add('hidden'); // Hide download button
+
+            synth.cancel();
+
+            setTimeout(() => {
+                playerLoading.style.opacity = '0';
+                playerLoading.classList.add('hidden');
+                playScene(0);
+            }, 1500); 
+        }
+
+        /**
+         * 7. Stop Playback
+         */
+        function stopPlayback() {
+            isStopped = true;
+            synth.cancel();
+            currentUtterance = null;
+            
+            // Reset UI
+            generateBtn.disabled = false;
+            stopBtn.disabled = true;
+            textInput.disabled = false;
+            voiceSelect.disabled = false;
+            imageUpload.disabled = false;
+            
+            playerPlaceholder.classList.remove('hidden');
+            playerPlaceholder.style.opacity = '1';
+            
+            imageElements[0].style.opacity = '0';
+            imageElements[1].style.opacity = '0';
+            
+            videoSubtitle.textContent = '';
+            statusMessage.textContent = isStopped ? 'Video stopped by user.' : 'Video finished.';
+        }
+
+        // === Event Listeners ===
+        document.addEventListener('DOMContentLoaded', () => {
+            populateVoiceList();
+            // Initialize Lucide icons
+            lucide.createIcons();
+            // Show the 'home' page by default
+            showPage('home');
+        });
+        imageUpload.addEventListener('change', handleImageUpload);
+        generateBtn.addEventListener('click', startPlayback);
+        stopBtn.addEventListener('click', stopPlayback);
+
+    </script>
+</body>
+</html>
